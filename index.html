@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Drag &amp; Black · PDF 마스킹 툴</title>
+  <title>Drag & Black · PDF 마스킹 툴 v2</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap');
@@ -22,6 +22,11 @@
       --green-dark: #047857;
       --green-pale: rgba(5, 150, 105, 0.09);
       --green-mid: rgba(5, 150, 105, 0.18);
+      --blue: #2563EB;
+      --blue-pale: rgba(37, 99, 235, 0.08);
+      --blue-mid: rgba(37, 99, 235, 0.18);
+      --orange: #EA580C;
+      --orange-pale: rgba(234, 88, 12, 0.08);
       --shadow: 0 2px 12px rgba(17, 24, 39, 0.08);
       --sans-kr: 'Noto Sans KR', 'Inter', sans-serif;
     }
@@ -40,6 +45,7 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      user-select: none;
     }
 
     /* ── Header ── */
@@ -98,7 +104,6 @@
       font-size: 10px;
       font-weight: 500;
       letter-spacing: 0.04em;
-      font-family: 'Noto Sans KR', sans-serif;
     }
 
     .divider {
@@ -173,7 +178,6 @@
       cursor: not-allowed;
     }
 
-    /* ── Page nav ── */
     .page-nav {
       display: flex;
       align-items: center;
@@ -214,49 +218,65 @@
       color: var(--ink);
     }
 
-    /* ── Toolbar sub-row ── */
+    /* ── Toolbar ── */
     .toolbar {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 8px;
       padding: 10px 24px;
       background: var(--surface);
       border-bottom: 1.5px solid var(--border);
       flex-shrink: 0;
       box-shadow: var(--shadow);
+      flex-wrap: wrap;
     }
 
-    .status-wrap {
+    .mode-group {
       display: flex;
+      gap: 0;
+      border: 1.5px solid var(--border2);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .mode-btn {
+      display: inline-flex;
       flex-direction: column;
-      gap: 1px;
-      margin-left: auto;
+      align-items: center;
+      gap: 2px;
+      padding: 7px 14px;
+      background: var(--surface);
+      color: var(--ink);
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+      border: none;
+      border-right: 1px solid var(--border);
+      font-family: var(--sans-kr);
     }
 
-    .status-kr {
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--ink-dim);
-      line-height: 1.2;
+    .mode-btn:last-child {
+      border-right: none;
     }
 
-    .status-en {
-      font-size: 11px;
-      color: var(--ink-faint);
-      font-family: 'Inter', sans-serif;
-      letter-spacing: 0.03em;
-    }
-
-    .status-wrap.active .status-kr {
+    .mode-btn:hover {
+      background: var(--green-pale);
       color: var(--green);
     }
 
-    .status-wrap.active .status-en {
-      color: var(--green);
-      opacity: 0.8;
+    .mode-btn.active {
+      background: var(--green);
+      color: #fff;
     }
 
-    /* Toolbar btns (light) */
+    .mode-btn.active .tbtn-en {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .mode-btn.active .tbtn-kr {
+      color: #fff;
+    }
+
     .tbtn {
       display: inline-flex;
       flex-direction: column;
@@ -320,6 +340,69 @@
       margin-left: 5px;
       font-family: 'Inter', sans-serif;
       vertical-align: middle;
+    }
+
+    .toolbar-sep {
+      width: 1px;
+      height: 32px;
+      background: var(--border);
+      margin: 0 4px;
+    }
+
+    .status-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      margin-left: auto;
+    }
+
+    .status-kr {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ink-dim);
+      line-height: 1.2;
+    }
+
+    .status-en {
+      font-size: 11px;
+      color: var(--ink-faint);
+      font-family: 'Inter', sans-serif;
+      letter-spacing: 0.03em;
+    }
+
+    .status-wrap.active .status-kr {
+      color: var(--green);
+    }
+
+    .status-wrap.active .status-en {
+      color: var(--green);
+      opacity: 0.8;
+    }
+
+    .promo-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 1px;
+      margin-left: auto;
+      cursor: default;
+      white-space: nowrap;
+    }
+
+    .promo-badge .line1 {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-dim);
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+
+    .promo-badge .line2 {
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--ink-faint);
+      font-family: 'Inter', sans-serif;
+      line-height: 1.2;
     }
 
     /* ── Drop zone ── */
@@ -395,6 +478,8 @@
       display: flex;
       gap: 12px;
       align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
     }
 
     .shortcut {
@@ -436,7 +521,6 @@
 
     #pdf-canvas {
       display: block;
-      cursor: crosshair;
       border-radius: 2px;
     }
 
@@ -455,6 +539,138 @@
       pointer-events: none;
       display: none;
       border-radius: 2px;
+    }
+
+    /* ── Text region overlays ── */
+    .text-region {
+      position: absolute;
+      border: 1.5px dashed rgba(37, 99, 235, 0.4);
+      background: rgba(37, 99, 235, 0.06);
+      cursor: pointer;
+      transition: all 0.12s;
+      border-radius: 2px;
+      z-index: 5;
+    }
+
+    .text-region:hover {
+      background: rgba(37, 99, 235, 0.15);
+      border-color: rgba(37, 99, 235, 0.7);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+    }
+
+    .text-region.stamped {
+      background: rgba(0, 0, 0, 0.85);
+      border-color: transparent;
+      cursor: default;
+      z-index: 6;
+    }
+
+    /* ── Redaction box overlays (for move/resize) ── */
+    .redact-box {
+      position: absolute;
+      background: #000;
+      cursor: move;
+      z-index: 7;
+      border: 2px solid transparent;
+      transition: border-color 0.1s;
+    }
+
+    .redact-box:hover,
+    .redact-box.selected {
+      border-color: var(--green);
+    }
+
+    .redact-box .resize-handle {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: var(--green);
+      border: 1.5px solid #fff;
+      border-radius: 2px;
+      display: none;
+      z-index: 8;
+    }
+
+    .redact-box:hover .resize-handle,
+    .redact-box.selected .resize-handle {
+      display: block;
+    }
+
+    .resize-handle.nw {
+      top: -5px;
+      left: -5px;
+      cursor: nw-resize;
+    }
+
+    .resize-handle.ne {
+      top: -5px;
+      right: -5px;
+      cursor: ne-resize;
+    }
+
+    .resize-handle.sw {
+      bottom: -5px;
+      left: -5px;
+      cursor: sw-resize;
+    }
+
+    .resize-handle.se {
+      bottom: -5px;
+      right: -5px;
+      cursor: se-resize;
+    }
+
+    .resize-handle.n {
+      top: -5px;
+      left: 50%;
+      transform: translateX(-50%);
+      cursor: n-resize;
+    }
+
+    .resize-handle.s {
+      bottom: -5px;
+      left: 50%;
+      transform: translateX(-50%);
+      cursor: s-resize;
+    }
+
+    .resize-handle.w {
+      top: 50%;
+      left: -5px;
+      transform: translateY(-50%);
+      cursor: w-resize;
+    }
+
+    .resize-handle.e {
+      top: 50%;
+      right: -5px;
+      transform: translateY(-50%);
+      cursor: e-resize;
+    }
+
+    .redact-box .delete-btn {
+      position: absolute;
+      top: -12px;
+      right: -12px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #ef4444;
+      color: #fff;
+      border: 2px solid #fff;
+      font-size: 12px;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      z-index: 9;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .redact-box:hover .delete-btn,
+    .redact-box.selected .delete-btn {
+      display: flex;
     }
 
     /* ── Toast ── */
@@ -483,47 +699,47 @@
       transform: translateX(-50%) translateY(0);
     }
 
-    /* ── Promo badge (header) ── */
-    .promo-badge {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 1px;
-      margin-left: auto;
-      cursor: default;
-      white-space: nowrap;
-    }
-
-    .promo-badge .line1 {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--ink-dim);
-      font-family: 'Noto Sans KR', sans-serif;
-      letter-spacing: -0.01em;
-      line-height: 1.2;
-    }
-
-    .promo-badge .line2 {
-      font-size: 11px;
-      font-weight: 400;
-      color: var(--ink-faint);
-      font-family: 'Inter', sans-serif;
-      line-height: 1.2;
-    }
-
-    .promo-badge a {
-      color: var(--green);
-      text-decoration: none;
-      font-weight: 600;
-      font-family: 'Inter', sans-serif;
-    }
-
-    .promo-badge a:hover {
-      text-decoration: underline;
-    }
-
     #file-input {
       display: none;
+    }
+
+    /* stamp-all button pulse */
+    @keyframes pulse-green {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.3);
+      }
+
+      50% {
+        box-shadow: 0 0 0 6px rgba(5, 150, 105, 0);
+      }
+    }
+
+    .tbtn.pulse {
+      animation: pulse-green 1.5s ease-in-out 2;
+    }
+
+    /* hint overlay for stamp mode */
+    .stamp-hint {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      z-index: 20;
+      background: rgba(37, 99, 235, 0.9);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      pointer-events: none;
+      display: none;
+      font-family: 'Noto Sans KR', sans-serif;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .stamp-hint.visible {
+      display: block;
     }
   </style>
 </head>
@@ -532,8 +748,8 @@
 
   <header>
     <div class="logo">
-      <span class="logo-main">Drag &amp; <em>Black</em></span>
-      <span class="logo-sub">100% 로컬 구동 초간단 PDF 마스킹 툴 <span class="logo-tag">PDF 리댁션 도구</span></span>
+      <span class="logo-main">Drag & <em>Black</em></span>
+      <span class="logo-sub">PDF 마스킹 툴 v2 <span class="logo-tag">스탬프 + 드래그</span></span>
     </div>
     <div class="divider"></div>
     <button class="btn primary" onclick="document.getElementById('file-input').click()">
@@ -544,7 +760,7 @@
 
     <div class="promo-badge">
       <span class="line1">🔒 100% 로컬 구동 - 파일 외부 전송 없음</span>
-      <span class="line2">100% Local, Super Simple PDF Masking Tool</span>
+      <span class="line2">100% Local · Stamp & Drag Redaction Tool</span>
     </div>
 
     <div class="page-nav" id="page-nav" style="display:none">
@@ -556,18 +772,44 @@
 
   <!-- Toolbar -->
   <div class="toolbar">
+    <!-- Mode Toggle -->
+    <div class="mode-group">
+      <button class="mode-btn active" id="mode-stamp" onclick="setMode('stamp')">
+        <span class="tbtn-kr">🔲 스탬프</span>
+        <span class="tbtn-en">Stamp (S)</span>
+      </button>
+      <button class="mode-btn" id="mode-drag" onclick="setMode('drag')">
+        <span class="tbtn-kr">✏️ 드래그</span>
+        <span class="tbtn-en">Drag (D)</span>
+      </button>
+      <button class="mode-btn" id="mode-select" onclick="setMode('select')">
+        <span class="tbtn-kr">🖱 선택</span>
+        <span class="tbtn-en">Select (V)</span>
+      </button>
+    </div>
+
+    <div class="toolbar-sep"></div>
+
+    <button class="tbtn" id="btn-stamp-all" disabled onclick="stampAllRegions()">
+      <span class="tbtn-kr">⬛ 전체 스탬프</span>
+      <span class="tbtn-en">Stamp All</span>
+    </button>
+
     <button class="tbtn" id="btn-undo" disabled onclick="undoLast()">
       <span class="tbtn-kr">↩ 되돌리기 <span id="undo-count" class="badge" style="display:none">0</span></span>
       <span class="tbtn-en">Undo (Ctrl+Z)</span>
     </button>
     <button class="tbtn danger" id="btn-clear" disabled onclick="clearAll()">
-      <span class="tbtn-kr">🗑 현재 페이지 초기화</span>
+      <span class="tbtn-kr">🗑 페이지 초기화</span>
       <span class="tbtn-en">Clear Page</span>
     </button>
-    <button class="tbtn primary" id="btn-save" disabled onclick="saveRedacted()"
+
+    <div class="toolbar-sep"></div>
+
+    <button class="tbtn" id="btn-save" disabled onclick="saveRedacted()"
       style="background:var(--green-pale);border-color:var(--green);color:var(--green-dark);">
-      <span class="tbtn-kr">💾 저장 (리댁션 적용)</span>
-      <span class="tbtn-en">Save Redacted PDF (Ctrl+S)</span>
+      <span class="tbtn-kr">💾 저장</span>
+      <span class="tbtn-en">Save (Ctrl+S)</span>
     </button>
 
     <div class="status-wrap" id="status-wrap">
@@ -584,13 +826,21 @@
       <div class="drop-title-en">Drop a PDF here or click to browse</div>
     </div>
     <div class="drop-sub">
-      <p>마우스로 드래그하면 해당 영역이 검은 블록으로 가려집니다</p>
-      <p class="en">Drag to select an area — it will be covered with a black redaction block</p>
+      <p><b>🔲 스탬프 모드:</b> 텍스트 영역을 자동 감지하여 클릭 한 번으로 블랙박스 처리</p>
+      <p class="en">Stamp Mode: Auto-detect text areas, click to redact instantly</p>
+      <p><b>✏️ 드래그 모드:</b> 마우스로 직접 영역을 선택하여 블랙박스 처리</p>
+      <p class="en">Drag Mode: Draw custom redaction boxes manually</p>
+      <p><b>🖱 선택 모드:</b> 생성된 블랙박스를 이동/크기 조절/삭제</p>
+      <p class="en">Select Mode: Move, resize, or delete existing redaction boxes</p>
     </div>
     <div class="shortcut-row">
-      <div class="shortcut"><kbd>Ctrl</kbd>+<kbd>Z</kbd> 되돌리기 · Undo</div>
-      <div class="shortcut"><kbd>Ctrl</kbd>+<kbd>S</kbd> 저장 · Save</div>
-      <div class="shortcut"><kbd>←</kbd><kbd>→</kbd> 페이지 이동 · Navigate</div>
+      <div class="shortcut"><kbd>S</kbd> 스탬프</div>
+      <div class="shortcut"><kbd>D</kbd> 드래그</div>
+      <div class="shortcut"><kbd>V</kbd> 선택</div>
+      <div class="shortcut"><kbd>Ctrl</kbd>+<kbd>Z</kbd> 되돌리기</div>
+      <div class="shortcut"><kbd>Ctrl</kbd>+<kbd>S</kbd> 저장</div>
+      <div class="shortcut"><kbd>←</kbd><kbd>→</kbd> 페이지</div>
+      <div class="shortcut"><kbd>Del</kbd> 선택 삭제</div>
     </div>
   </div>
 
@@ -600,12 +850,13 @@
       <canvas id="pdf-canvas"></canvas>
       <canvas id="redact-canvas"></canvas>
       <div id="sel-rect"></div>
+      <div id="text-regions-layer"></div>
+      <div id="redact-boxes-layer"></div>
+      <div class="stamp-hint" id="stamp-hint">🔲 텍스트 영역을 클릭하여 마스킹</div>
     </div>
   </div>
 
   <div id="toast"></div>
-
-
 
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -618,12 +869,28 @@
     let pdfBytes = null;
     let pdfFileName = 'document';
 
-    // redactions[pageNum] = [{x, y, w, h} in PDF coords]
+    // redactions[pageNum] = [{x, y, w, h, id} in PDF coords]
     let redactions = {};
+    let redactionIdCounter = 0;
 
-    // drag state
+    // text regions per page (detected by pdf.js)
+    let textRegions = {}; // textRegions[pageNum] = [{x, y, w, h, text}]
+
+    // Mode: 'stamp', 'drag', 'select'
+    let currentMode = 'stamp';
+
+    // drag state (for drag mode)
     let isDragging = false;
     let startX = 0, startY = 0;
+
+    // select/move/resize state
+    let selectedBoxId = null;
+    let isMoving = false;
+    let isResizing = false;
+    let resizeDir = '';
+    let moveOffsetX = 0, moveOffsetY = 0;
+    let resizeStartRect = null;
+    let resizeStartMouse = null;
 
     const canvas = document.getElementById('pdf-canvas');
     const ctx = canvas.getContext('2d');
@@ -631,6 +898,45 @@
     const rCtx = rCanvas.getContext('2d');
     const selRect = document.getElementById('sel-rect');
     const container = document.getElementById('canvas-container');
+    const textRegionsLayer = document.getElementById('text-regions-layer');
+    const redactBoxesLayer = document.getElementById('redact-boxes-layer');
+
+    // ── Mode ──
+    function setMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('mode-' + mode).classList.add('active');
+
+      // Update cursor
+      canvas.style.cursor = mode === 'drag' ? 'crosshair' : mode === 'select' ? 'default' : 'default';
+
+      // Show/hide text regions
+      const hint = document.getElementById('stamp-hint');
+      if (mode === 'stamp') {
+        textRegionsLayer.style.display = 'block';
+        hint.classList.add('visible');
+      } else {
+        textRegionsLayer.style.display = 'none';
+        hint.classList.remove('visible');
+      }
+
+      // Show/hide redact box interactivity
+      document.querySelectorAll('.redact-box').forEach(box => {
+        box.style.pointerEvents = mode === 'select' ? 'auto' : 'none';
+      });
+
+      // Deselect
+      if (mode !== 'select') {
+        deselectAll();
+      }
+
+      updateStatus();
+    }
+
+    function deselectAll() {
+      selectedBoxId = null;
+      document.querySelectorAll('.redact-box.selected').forEach(b => b.classList.remove('selected'));
+    }
 
     // ── File input ──
     document.getElementById('file-input').addEventListener('change', e => {
@@ -643,8 +949,7 @@
     dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
     dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
     dropZone.addEventListener('drop', e => {
-      e.preventDefault();
-      dropZone.classList.remove('dragover');
+      e.preventDefault(); dropZone.classList.remove('dragover');
       const file = e.dataTransfer.files[0];
       if (file?.type === 'application/pdf') loadPDF(file);
     });
@@ -657,6 +962,7 @@
       totalPages = pdfDoc.numPages;
       currentPage = 1;
       redactions = {};
+      textRegions = {};
 
       document.getElementById('drop-zone').style.display = 'none';
       document.getElementById('viewer-wrap').style.display = 'flex';
@@ -665,7 +971,7 @@
       document.getElementById('btn-clear').disabled = false;
 
       setStatus(`"${file.name}" — ${totalPages}페이지`, false);
-      renderPage();
+      await renderPage();
     }
 
     async function renderPage() {
@@ -677,31 +983,372 @@
       rCanvas.height = viewport.height;
 
       await page.render({ canvasContext: ctx, viewport }).promise;
-      drawRedactions();
+
+      // Extract text regions if not cached
+      if (!textRegions[currentPage]) {
+        await extractTextRegions(page, viewport);
+      }
+
+      renderTextRegions();
+      renderRedactBoxes();
+      drawRedactionsToCanvas();
 
       document.getElementById('page-info').textContent = `${currentPage} / ${totalPages}`;
       document.getElementById('btn-prev').disabled = currentPage <= 1;
       document.getElementById('btn-next').disabled = currentPage >= totalPages;
+      document.getElementById('btn-stamp-all').disabled = !(textRegions[currentPage]?.length > 0);
+
+      setMode(currentMode);
     }
 
-    function drawRedactions() {
-      rCtx.clearRect(0, 0, rCanvas.width, rCanvas.height);
-      const rects = redactions[currentPage] || [];
-      rCtx.fillStyle = '#000000';
-      rects.forEach(r => {
-        // r is in PDF coords; convert to canvas coords
-        const cx = r.x * scale;
-        const cy = r.y * scale;
-        const cw = r.w * scale;
-        const ch = r.h * scale;
-        rCtx.fillRect(cx, cy, cw, ch);
+    // ── Text extraction & region merging ──
+    async function extractTextRegions(page, viewport) {
+      const textContent = await page.getTextContent();
+      const items = textContent.items;
+
+      // Convert each text item to canvas coordinates
+      let rawItems = [];
+      for (const item of items) {
+        if (!item.str || item.str.trim() === '') continue;
+        const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
+        const x = tx[4];
+        const y = tx[5];
+        const fontSize = Math.sqrt(tx[2] * tx[2] + tx[3] * tx[3]);
+        const w = item.width * viewport.scale;
+        const h = fontSize;
+
+        rawItems.push({
+          x: x,
+          y: y - h,
+          w: w,
+          h: h * 1.2,
+          text: item.str,
+          baseline: y
+        });
+      }
+
+      // Merge into line-level regions
+      // Group items that are on the same baseline (within tolerance)
+      rawItems.sort((a, b) => a.y - b.y || a.x - b.x);
+
+      let lines = [];
+      let currentLine = null;
+
+      for (const item of rawItems) {
+        if (!currentLine) {
+          currentLine = { ...item };
+          continue;
+        }
+
+        // Check if same line (overlapping vertically)
+        const vertOverlap = !(item.y > currentLine.y + currentLine.h || item.y + item.h < currentLine.y);
+        const horizClose = item.x <= currentLine.x + currentLine.w + 15; // 15px gap tolerance
+
+        if (vertOverlap && horizClose) {
+          // Merge into current line
+          const newX = Math.min(currentLine.x, item.x);
+          const newY = Math.min(currentLine.y, item.y);
+          const newRight = Math.max(currentLine.x + currentLine.w, item.x + item.w);
+          const newBottom = Math.max(currentLine.y + currentLine.h, item.y + item.h);
+          currentLine.x = newX;
+          currentLine.y = newY;
+          currentLine.w = newRight - newX;
+          currentLine.h = newBottom - newY;
+          currentLine.text += ' ' + item.text;
+        } else {
+          lines.push(currentLine);
+          currentLine = { ...item };
+        }
+      }
+      if (currentLine) lines.push(currentLine);
+
+      // Now merge lines into paragraph-level blocks
+      // Group lines that are vertically adjacent
+      let paragraphs = [];
+      let currentPara = null;
+
+      for (const line of lines) {
+        if (!currentPara) {
+          currentPara = { ...line };
+          continue;
+        }
+
+        const gap = line.y - (currentPara.y + currentPara.h);
+        const avgLineH = (currentPara.h / (currentPara.lineCount || 1) + line.h) / 2;
+        const horizOverlap = !(line.x > currentPara.x + currentPara.w + 20 || line.x + line.w < currentPara.x - 20);
+
+        if (gap < avgLineH * 0.8 && gap >= -5 && horizOverlap) {
+          // Merge
+          const newX = Math.min(currentPara.x, line.x);
+          const newY = Math.min(currentPara.y, line.y);
+          const newRight = Math.max(currentPara.x + currentPara.w, line.x + line.w);
+          const newBottom = Math.max(currentPara.y + currentPara.h, line.y + line.h);
+          currentPara.x = newX;
+          currentPara.y = newY;
+          currentPara.w = newRight - newX;
+          currentPara.h = newBottom - newY;
+          currentPara.text += '\n' + line.text;
+          currentPara.lineCount = (currentPara.lineCount || 1) + 1;
+        } else {
+          paragraphs.push(currentPara);
+          currentPara = { ...line, lineCount: 1 };
+        }
+      }
+      if (currentPara) paragraphs.push(currentPara);
+
+      // Add small padding and convert to PDF coords for storage
+      const PAD = 3;
+      textRegions[currentPage] = paragraphs.map(p => ({
+        // Store in canvas coords for display
+        cx: p.x - PAD,
+        cy: p.y - PAD,
+        cw: p.w + PAD * 2,
+        ch: p.h + PAD * 2,
+        // PDF coords (for redaction)
+        x: (p.x - PAD) / scale,
+        y: (p.y - PAD) / scale,
+        w: (p.w + PAD * 2) / scale,
+        h: (p.h + PAD * 2) / scale,
+        text: p.text
+      }));
+    }
+
+    // ── Render text region overlays (stamp mode) ──
+    function renderTextRegions() {
+      textRegionsLayer.innerHTML = '';
+      const regions = textRegions[currentPage] || [];
+
+      regions.forEach((r, idx) => {
+        const div = document.createElement('div');
+        div.className = 'text-region';
+        div.style.left = r.cx + 'px';
+        div.style.top = r.cy + 'px';
+        div.style.width = r.cw + 'px';
+        div.style.height = r.ch + 'px';
+        div.dataset.idx = idx;
+
+        // Check if already stamped
+        const pageRedactions = redactions[currentPage] || [];
+        const isStamped = pageRedactions.some(rd =>
+          Math.abs(rd.x - r.x) < 2 && Math.abs(rd.y - r.y) < 2 &&
+          Math.abs(rd.w - r.w) < 2 && Math.abs(rd.h - r.h) < 2
+        );
+        if (isStamped) div.classList.add('stamped');
+
+        div.addEventListener('click', () => stampRegion(idx));
+        textRegionsLayer.appendChild(div);
       });
+    }
+
+    // ── Stamp a text region ──
+    function stampRegion(idx) {
+      const r = textRegions[currentPage][idx];
+      if (!r) return;
+
+      if (!redactions[currentPage]) redactions[currentPage] = [];
+
+      // Check if already stamped — if so, unstamp (toggle)
+      const existingIdx = redactions[currentPage].findIndex(rd =>
+        Math.abs(rd.x - r.x) < 2 && Math.abs(rd.y - r.y) < 2 &&
+        Math.abs(rd.w - r.w) < 2 && Math.abs(rd.h - r.h) < 2
+      );
+
+      if (existingIdx >= 0) {
+        redactions[currentPage].splice(existingIdx, 1);
+      } else {
+        redactions[currentPage].push({
+          x: r.x, y: r.y, w: r.w, h: r.h,
+          id: ++redactionIdCounter
+        });
+      }
+
+      renderTextRegions();
+      renderRedactBoxes();
+      drawRedactionsToCanvas();
+      updateStatus();
+    }
+
+    // ── Stamp all regions ──
+    function stampAllRegions() {
+      const regions = textRegions[currentPage] || [];
+      if (regions.length === 0) return;
+
+      if (!redactions[currentPage]) redactions[currentPage] = [];
+
+      regions.forEach(r => {
+        const exists = redactions[currentPage].some(rd =>
+          Math.abs(rd.x - r.x) < 2 && Math.abs(rd.y - r.y) < 2
+        );
+        if (!exists) {
+          redactions[currentPage].push({
+            x: r.x, y: r.y, w: r.w, h: r.h,
+            id: ++redactionIdCounter
+          });
+        }
+      });
+
+      renderTextRegions();
+      renderRedactBoxes();
+      drawRedactionsToCanvas();
+      setStatus(`${currentPage}페이지 전체 스탬프 적용`, true);
+      showToast('✓ 전체 텍스트 영역에 스탬프 적용');
+    }
+
+    // ── Render interactive redaction boxes (select mode) ──
+    function renderRedactBoxes() {
+      redactBoxesLayer.innerHTML = '';
+      const rects = redactions[currentPage] || [];
+
+      rects.forEach((r) => {
+        const box = document.createElement('div');
+        box.className = 'redact-box';
+        box.dataset.id = r.id;
+        box.style.left = (r.x * scale) + 'px';
+        box.style.top = (r.y * scale) + 'px';
+        box.style.width = (r.w * scale) + 'px';
+        box.style.height = (r.h * scale) + 'px';
+        box.style.pointerEvents = currentMode === 'select' ? 'auto' : 'none';
+
+        if (r.id === selectedBoxId) box.classList.add('selected');
+
+        // Resize handles
+        ['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se'].forEach(dir => {
+          const handle = document.createElement('div');
+          handle.className = `resize-handle ${dir}`;
+          handle.addEventListener('mousedown', e => {
+            e.stopPropagation();
+            startResize(r.id, dir, e);
+          });
+          box.appendChild(handle);
+        });
+
+        // Delete button
+        const delBtn = document.createElement('div');
+        delBtn.className = 'delete-btn';
+        delBtn.textContent = '✕';
+        delBtn.addEventListener('click', e => {
+          e.stopPropagation();
+          deleteRedaction(r.id);
+        });
+        box.appendChild(delBtn);
+
+        // Select + Move
+        box.addEventListener('mousedown', e => {
+          if (e.target.classList.contains('resize-handle') || e.target.classList.contains('delete-btn')) return;
+          e.stopPropagation();
+          selectBox(r.id);
+          startMove(r.id, e);
+        });
+
+        redactBoxesLayer.appendChild(box);
+      });
+    }
+
+    function selectBox(id) {
+      selectedBoxId = id;
+      document.querySelectorAll('.redact-box').forEach(b => {
+        b.classList.toggle('selected', parseInt(b.dataset.id) === id);
+      });
+    }
+
+    function deleteRedaction(id) {
+      const rects = redactions[currentPage];
+      if (!rects) return;
+      const idx = rects.findIndex(r => r.id === id);
+      if (idx >= 0) {
+        rects.splice(idx, 1);
+        if (selectedBoxId === id) selectedBoxId = null;
+        renderTextRegions();
+        renderRedactBoxes();
+        drawRedactionsToCanvas();
+        updateStatus();
+      }
+    }
+
+    function startMove(id, e) {
+      isMoving = true;
+      const rect = redactions[currentPage].find(r => r.id === id);
+      if (!rect) return;
+      const containerRect = container.getBoundingClientRect();
+      moveOffsetX = e.clientX - containerRect.left - rect.x * scale;
+      moveOffsetY = e.clientY - containerRect.top - rect.y * scale;
+
+      const onMove = (ev) => {
+        const nx = (ev.clientX - containerRect.left - moveOffsetX) / scale;
+        const ny = (ev.clientY - containerRect.top - moveOffsetY) / scale;
+        rect.x = Math.max(0, nx);
+        rect.y = Math.max(0, ny);
+        renderRedactBoxes();
+        drawRedactionsToCanvas();
+      };
+
+      const onUp = () => {
+        isMoving = false;
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+        renderTextRegions();
+      };
+
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+    }
+
+    function startResize(id, dir, e) {
+      isResizing = true;
+      resizeDir = dir;
+      const rect = redactions[currentPage].find(r => r.id === id);
+      if (!rect) return;
+      const containerRect = container.getBoundingClientRect();
+      resizeStartRect = { x: rect.x, y: rect.y, w: rect.w, h: rect.h };
+      resizeStartMouse = { x: e.clientX, y: e.clientY };
+
+      const onMove = (ev) => {
+        const dx = (ev.clientX - resizeStartMouse.x) / scale;
+        const dy = (ev.clientY - resizeStartMouse.y) / scale;
+        const s = resizeStartRect;
+        const MIN = 8 / scale;
+
+        if (dir.includes('e')) rect.w = Math.max(MIN, s.w + dx);
+        if (dir.includes('w')) { rect.x = s.x + dx; rect.w = Math.max(MIN, s.w - dx); }
+        if (dir.includes('s')) rect.h = Math.max(MIN, s.h + dy);
+        if (dir.includes('n')) { rect.y = s.y + dy; rect.h = Math.max(MIN, s.h - dy); }
+
+        renderRedactBoxes();
+        drawRedactionsToCanvas();
+      };
+
+      const onUp = () => {
+        isResizing = false;
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+        renderTextRegions();
+      };
+
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+    }
+
+    // ── Draw black rects to the redaction canvas (visual only) ──
+    function drawRedactionsToCanvas() {
+      rCtx.clearRect(0, 0, rCanvas.width, rCanvas.height);
+      // We don't draw on rCanvas anymore since we have DOM boxes,
+      // but we still need this for the save function.
+      // Actually let's keep the canvas drawing for non-select modes
+      if (currentMode !== 'select') {
+        const rects = redactions[currentPage] || [];
+        rCtx.fillStyle = '#000000';
+        rects.forEach(r => {
+          rCtx.fillRect(r.x * scale, r.y * scale, r.w * scale, r.h * scale);
+        });
+      } else {
+        // In select mode, DOM boxes handle the display
+      }
       updateUndoBtn();
     }
 
-    // ── Mouse events on canvas ──
+    // ── Mouse events on canvas (drag mode) ──
     canvas.addEventListener('mousedown', e => {
-      if (!pdfDoc) return;
+      if (!pdfDoc || currentMode !== 'drag') return;
       isDragging = true;
       const rect = canvas.getBoundingClientRect();
       startX = e.clientX - rect.left;
@@ -714,53 +1361,49 @@
     });
 
     canvas.addEventListener('mousemove', e => {
-      if (!isDragging) return;
+      if (!isDragging || currentMode !== 'drag') return;
       const rect = canvas.getBoundingClientRect();
       const cx = e.clientX - rect.left;
       const cy = e.clientY - rect.top;
-      const x = Math.min(cx, startX);
-      const y = Math.min(cy, startY);
-      const w = Math.abs(cx - startX);
-      const h = Math.abs(cy - startY);
-      selRect.style.left = x + 'px';
-      selRect.style.top = y + 'px';
-      selRect.style.width = w + 'px';
-      selRect.style.height = h + 'px';
+      selRect.style.left = Math.min(cx, startX) + 'px';
+      selRect.style.top = Math.min(cy, startY) + 'px';
+      selRect.style.width = Math.abs(cx - startX) + 'px';
+      selRect.style.height = Math.abs(cy - startY) + 'px';
     });
 
     canvas.addEventListener('mouseup', e => {
-      if (!isDragging) return;
+      if (!isDragging || currentMode !== 'drag') return;
       isDragging = false;
       selRect.style.display = 'none';
 
       const rect = canvas.getBoundingClientRect();
       const endX = e.clientX - rect.left;
       const endY = e.clientY - rect.top;
-
       const x = Math.min(startX, endX);
       const y = Math.min(startY, endY);
       const w = Math.abs(endX - startX);
       const h = Math.abs(endY - startY);
-
-      if (w < 4 || h < 4) return; // too small
-
-      // Convert canvas px → PDF coords
-      const pdfX = x / scale;
-      const pdfY = y / scale;
-      const pdfW = w / scale;
-      const pdfH = h / scale;
+      if (w < 4 || h < 4) return;
 
       if (!redactions[currentPage]) redactions[currentPage] = [];
-      redactions[currentPage].push({ x: pdfX, y: pdfY, w: pdfW, h: pdfH });
-      drawRedactions();
-      setStatus(`${currentPage}페이지에 리댁션 ${redactions[currentPage].length}개`, true);
+      redactions[currentPage].push({
+        x: x / scale, y: y / scale, w: w / scale, h: h / scale,
+        id: ++redactionIdCounter
+      });
+
+      renderTextRegions();
+      renderRedactBoxes();
+      drawRedactionsToCanvas();
+      updateStatus();
     });
 
     canvas.addEventListener('mouseleave', () => {
-      if (isDragging) {
-        isDragging = false;
-        selRect.style.display = 'none';
-      }
+      if (isDragging) { isDragging = false; selRect.style.display = 'none'; }
+    });
+
+    // Click on canvas in select mode = deselect
+    canvas.addEventListener('click', (e) => {
+      if (currentMode === 'select') deselectAll();
     });
 
     // ── Undo / Clear ──
@@ -768,14 +1411,19 @@
       const rects = redactions[currentPage];
       if (rects && rects.length > 0) {
         rects.pop();
-        drawRedactions();
-        setStatus(`되돌렸습니다`, false);
+        renderTextRegions();
+        renderRedactBoxes();
+        drawRedactionsToCanvas();
+        setStatus('되돌렸습니다', false);
       }
     }
 
     function clearAll() {
       redactions[currentPage] = [];
-      drawRedactions();
+      selectedBoxId = null;
+      renderTextRegions();
+      renderRedactBoxes();
+      drawRedactionsToCanvas();
       setStatus('현재 페이지 리댁션 초기화', false);
     }
 
@@ -792,11 +1440,19 @@
       }
     }
 
+    function updateStatus() {
+      const count = (redactions[currentPage] || []).length;
+      if (count > 0) {
+        setStatus(`${currentPage}페이지에 리댁션 ${count}개`, true);
+      }
+    }
+
     // ── Page nav ──
     function changePage(delta) {
       const next = currentPage + delta;
       if (next < 1 || next > totalPages) return;
       currentPage = next;
+      selectedBoxId = null;
       renderPage();
     }
 
@@ -806,7 +1462,6 @@
       setStatus('저장 중...', true);
 
       try {
-        // Load jsPDF first if not already loaded
         if (!window.jspdf) {
           await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
         }
@@ -825,11 +1480,9 @@
           offCanvas.width = vp.width;
           offCanvas.height = vp.height;
 
-          // Render PDF page
           offCtx.clearRect(0, 0, offCanvas.width, offCanvas.height);
           await page.render({ canvasContext: offCtx, viewport: vp }).promise;
 
-          // Draw redaction blocks (black)
           const rects = redactions[pageNum] || [];
           offCtx.fillStyle = '#000000';
           rects.forEach(r => {
@@ -837,16 +1490,11 @@
           });
 
           const imgData = offCanvas.toDataURL('image/jpeg', 0.95);
-          // Convert px → mm (72 DPI PDF coords, scale 2.0 → 144 DPI)
           const wMm = (vp.width / 2) * 25.4 / 72;
           const hMm = (vp.height / 2) * 25.4 / 72;
 
           if (pageNum === 1) {
-            pdf = new JSPDF({
-              unit: 'mm',
-              format: [wMm, hMm],
-              orientation: wMm > hMm ? 'l' : 'p'
-            });
+            pdf = new JSPDF({ unit: 'mm', format: [wMm, hMm], orientation: wMm > hMm ? 'l' : 'p' });
           } else {
             pdf.addPage([wMm, hMm], wMm > hMm ? 'l' : 'p');
           }
@@ -855,8 +1503,8 @@
 
         const baseName = (pdfFileName || 'document').replace(/\.pdf$/i, '');
         pdf.save(`${baseName}_blacked.pdf`);
-        setStatus('저장 완료! redacted.pdf', false);
-        showToast('✓  redacted.pdf 저장되었습니다');
+        setStatus('저장 완료!', false);
+        showToast(`✓  ${baseName}_blacked.pdf 저장되었습니다`);
       } catch (err) {
         console.error(err);
         setStatus('저장 오류: ' + err.message, false);
@@ -867,9 +1515,7 @@
     function loadScript(src) {
       return new Promise((res, rej) => {
         const s = document.createElement('script');
-        s.src = src;
-        s.onload = res;
-        s.onerror = rej;
+        s.src = src; s.onload = res; s.onerror = rej;
         document.head.appendChild(s);
       });
     }
@@ -878,7 +1524,7 @@
     const statusMap = {
       '파일을 열어주세요': 'Open a PDF file to get started',
       '저장 중...': 'Saving...',
-      '저장 완료! redacted.pdf': 'Saved as redacted.pdf',
+      '저장 완료!': 'Saved successfully!',
       '되돌렸습니다': 'Undo applied',
       '현재 페이지 리댁션 초기화': 'Current page redactions cleared',
     };
@@ -900,6 +1546,8 @@
         } else if (msgKr.match(/^".+".*페이지$/)) {
           const m = msgKr.match(/^"(.+)" — (\d+)페이지$/);
           if (m) msgEn = `"${m[1]}" — ${m[2]} page(s)`;
+        } else if (msgKr.includes('전체 스탬프')) {
+          msgEn = 'All text regions stamped on this page';
         }
       }
       en.textContent = msgEn || '';
@@ -919,6 +1567,22 @@
       if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveRedacted(); }
       if (e.key === 'ArrowLeft') changePage(-1);
       if (e.key === 'ArrowRight') changePage(1);
+
+      // Mode shortcuts
+      if (!e.ctrlKey && !e.altKey && !e.metaKey) {
+        if (e.key === 's' || e.key === 'S') { if (!e.ctrlKey) setMode('stamp'); }
+        if (e.key === 'd' || e.key === 'D') setMode('drag');
+        if (e.key === 'v' || e.key === 'V') setMode('select');
+      }
+
+      // Delete selected
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedBoxId !== null && currentMode === 'select') {
+        e.preventDefault();
+        deleteRedaction(selectedBoxId);
+      }
+
+      // Escape to deselect
+      if (e.key === 'Escape') deselectAll();
     });
   </script>
 </body>
