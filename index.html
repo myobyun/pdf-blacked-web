@@ -543,7 +543,13 @@ dropZone.addEventListener('drop', e => {
 });
 
 async function loadPDF(file) {
-  pdfBytes = await file.arrayBuffer();
+  // FileReader 방식 — 모든 브라우저/사파리 호환
+  pdfBytes = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => resolve(e.target.result);
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
   pdfFileName = file.name;
   const data = new Uint8Array(pdfBytes);
   pdfDoc = await pdfjsLib.getDocument({ data }).promise;
@@ -655,6 +661,65 @@ canvas.addEventListener('mouseleave', () => {
     selRect.style.display = 'none';
   }
 });
+
+// ── Touch events (모바일/아이패드) ──
+function getTouchPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const touch = e.touches[0] || e.changedTouches[0];
+  return {
+    x: touch.clientX - rect.left,
+    y: touch.clientY - rect.top
+  };
+}
+
+canvas.addEventListener('touchstart', e => {
+  if (!pdfDoc) return;
+  e.preventDefault();
+  const pos = getTouchPos(e);
+  isDragging = true;
+  startX = pos.x;
+  startY = pos.y;
+  selRect.style.display = 'block';
+  selRect.style.left = startX + 'px';
+  selRect.style.top = startY + 'px';
+  selRect.style.width = '0';
+  selRect.style.height = '0';
+}, { passive: false });
+
+canvas.addEventListener('touchmove', e => {
+  if (!isDragging) return;
+  e.preventDefault();
+  const pos = getTouchPos(e);
+  const x = Math.min(pos.x, startX);
+  const y = Math.min(pos.y, startY);
+  const w = Math.abs(pos.x - startX);
+  const h = Math.abs(pos.y - startY);
+  selRect.style.left = x + 'px';
+  selRect.style.top = y + 'px';
+  selRect.style.width = w + 'px';
+  selRect.style.height = h + 'px';
+}, { passive: false });
+
+canvas.addEventListener('touchend', e => {
+  if (!isDragging) return;
+  e.preventDefault();
+  isDragging = false;
+  selRect.style.display = 'none';
+  const pos = getTouchPos(e);
+  const x = Math.min(startX, pos.x);
+  const y = Math.min(startY, pos.y);
+  const w = Math.abs(pos.x - startX);
+  const h = Math.abs(pos.y - startY);
+  if (w < 4 || h < 4) return;
+  const pdfX = x / scale;
+  const pdfY = y / scale;
+  const pdfW = w / scale;
+  const pdfH = h / scale;
+  if (!redactions[currentPage]) redactions[currentPage] = [];
+  redactions[currentPage].push({ x: pdfX, y: pdfY, w: pdfW, h: pdfH });
+  drawRedactions();
+  setStatus(`${currentPage}페이지에 리댁션 ${redactions[currentPage].length}개`, true);
+}, { passive: false });
 
 // ── Undo / Clear ──
 function undoLast() {
