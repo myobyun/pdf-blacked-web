@@ -502,7 +502,17 @@
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 pdfjsLib.GlobalWorkerOptions.workerSrc =
-  'https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js';
+  `https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js`;
+// Cross-origin workaround: fetch worker and create blob URL
+(async () => {
+  try {
+    const r = await fetch('https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js');
+    const blob = await r.blob();
+    pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(blob);
+  } catch(e) {
+    // fallback: use unpkg directly (may fail on some hosts)
+  }
+})();
 
 let pdfDoc = null;
 let currentPage = 1;
