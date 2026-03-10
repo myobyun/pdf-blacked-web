@@ -302,18 +302,93 @@ const trLayer=document.getElementById('text-regions-layer');
 const piiLayer=document.getElementById('pii-layer');
 const rbLayer=document.getElementById('redact-boxes-layer');
 
-// ═══ PII CATEGORIES ═══
+// ═══ PII CATEGORIES (ordered by specificity — higher priority first) ═══
 const PII_CATS=[
-  {id:'ssn',label:'주민등록번호',color:'var(--red)',css:'pii-cat-ssn',enabled:true,
-    patterns:[/\d{6}\s*[-–]\s*\d{7}/g]},
-  {id:'phone',label:'전화번호',color:'var(--orange)',css:'pii-cat-phone',enabled:true,
-    patterns:[/0\d{1,2}[-–.\s]?\d{3,4}[-–.\s]?\d{4}/g,/\(0\d{1,2}\)\s*\d{3,4}[-–.\s]?\d{4}/g]},
-  {id:'email',label:'이메일',color:'var(--blue)',css:'pii-cat-email',enabled:true,
-    patterns:[/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g]},
-  {id:'account',label:'계좌번호',color:'var(--purple)',css:'pii-cat-account',enabled:true,
-    patterns:[/\d{3,6}[-–]\d{2,6}[-–]\d{2,6}([-–]\d{1,3})?/g]},
-  {id:'biznum',label:'사업자등록번호',color:'#0891b2',css:'pii-cat-biznum',enabled:true,
-    patterns:[/\d{3}[-–]\d{2}[-–]\d{5}/g]},
+  {id:'ssn',label:'주민등록번호',color:'var(--red)',css:'pii-cat-ssn',enabled:true,priority:1,
+    // Matches: 900101-1234567, 900101-1******, 900101-*******, 900101-1XX5XXX, etc.
+    // Masking chars: * ● ○ × X x ☆ # □
+    patterns:[
+      /\d{6}\s*[-–]\s*[1-8\*●○×Xx☆#□][0-9\*●○×Xx☆#□]{6}/g,
+      /\d{6}\s*[-–]\s*[\*●○×Xx☆#□]{7}/g,
+    ],
+    validate: function(text) {
+      const clean = text.replace(/[\s\-–]/g,'');
+      if(clean.length!==13) return false;
+      // Front 6 must be all digits
+      const front = clean.substring(0,6);
+      if(!/^\d{6}$/.test(front)) return false;
+      // Check month 01-12
+      const mm = parseInt(front.substring(2,4));
+      if(mm<1||mm>12) return false;
+      // Check day 01-31
+      const dd = parseInt(front.substring(4,6));
+      if(dd<1||dd>31) return false;
+      // Back 7: at least the structure is 7 chars of digits/mask chars
+      const back = clean.substring(6);
+      if(back.length!==7) return false;
+      // If first back char is a digit, must be 1-8 (gender code)
+      if(/\d/.test(back[0])) {
+        const g = parseInt(back[0]);
+        if(g<1||g>8) return false;
+      }
+      return true;
+    }
+  },
+  {id:'biznum',label:'사업자등록번호',color:'#0891b2',css:'pii-cat-biznum',enabled:true,priority:2,
+    // Exactly 3-2-5 format
+    patterns:[/\d{3}[-–]\d{2}[-–]\d{5}/g],
+    validate: function(text) {
+      const clean = text.replace(/[\-–]/g,'');
+      return clean.length === 10;
+    }
+  },
+  {id:'phone',label:'전화번호',color:'var(--orange)',css:'pii-cat-phone',enabled:true,priority:3,
+    // Valid area codes: 02, 031-064, 010-019, 070
+    patterns:[
+      /(?:02|0[1-9]\d)[-–.\s]?\d{3,4}[-–.\s]?\d{4}/g,
+      /\(?(?:02|0[1-9]\d)\)?[-–.\s]?\d{3,4}[-–.\s]?\d{4}/g
+    ],
+    validate: function(text) {
+      const clean = text.replace(/[\s\-–.()]/g,'');
+      // Total digits should be 9-11
+      if(clean.length<9||clean.length>11) return false;
+      // Must start with 0
+      if(clean[0]!=='0') return false;
+      // Known prefixes: 02, 031-064, 010-019, 070, 080
+      const prefix2 = clean.substring(0,2);
+      const prefix3 = clean.substring(0,3);
+      const validPrefixes2 = ['02'];
+      const validPrefixes3 = [
+        '010','011','016','017','018','019', // mobile
+        '031','032','033','041','042','043','044', // area
+        '051','052','053','054','055','061','062','063','064', // area
+        '070','080' // VoIP, toll-free
+      ];
+      return validPrefixes2.includes(prefix2) || validPrefixes3.includes(prefix3);
+    }
+  },
+  {id:'email',label:'이메일',color:'var(--blue)',css:'pii-cat-email',enabled:true,priority:4,
+    patterns:[/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g],
+    validate: function(text) {
+      // Basic structural check
+      const parts = text.split('@');
+      if(parts.length!==2) return false;
+      if(parts[0].length<1||parts[1].length<3) return false;
+      return parts[1].includes('.');
+    }
+  },
+  {id:'account',label:'계좌번호',color:'var(--purple)',css:'pii-cat-account',enabled:true,priority:5,
+    // Korean bank accounts: 10-14 digits with 2+ hyphens
+    patterns:[/\d{3,6}[-–]\d{2,8}[-–]\d{2,8}([-–]\d{1,5})?/g],
+    validate: function(text) {
+      const clean = text.replace(/[\-–]/g,'');
+      const hyphens = (text.match(/[\-–]/g)||[]).length;
+      // Must have 10-14 total digits and 2-3 hyphens
+      if(clean.length<10||clean.length>14) return false;
+      if(hyphens<2||hyphens>4) return false;
+      return true;
+    }
+  },
 ];
 
 function buildCatUI(){
@@ -449,31 +524,34 @@ async function extractPageTextBatch(pn){
   textRegions[pn]=paras.map(p=>({cx:p.x-P,cy:p.y-P,cw:p.w+P*2,ch:p.h+P*2,x:(p.x-P)/scale,y:(p.y-P)/scale,w:(p.w+P*2)/scale,h:(p.h+P*2)/scale,text:p.text}));
 }
 
-// ═══ PII DETECTION ═══
+// ═══ PII DETECTION (with dedup + validation + priority) ═══
 function detectPII(pn){
   const items=pageTextCache[pn];if(!items)return[];
-  const dets=[];
+  let rawDets=[];
 
-  // Per-item detection
+  // === Pass 1: Per-item detection ===
   for(const it of items){
     for(const cat of PII_CATS){
       if(!cat.enabled)continue;
       for(const pat of cat.patterns){
         const re=new RegExp(pat.source,pat.flags);let m;
         while((m=re.exec(it.text))!==null){
+          // Validate match
+          if(cat.validate && !cat.validate(m[0])) continue;
+
           const cr=m.index/Math.max(it.text.length,1);
           const mr=m[0].length/Math.max(it.text.length,1);
           const mx=it.x+it.w*cr,mw=Math.max(it.w*mr,20);
           const P=2;
-          dets.push({cx:mx-P,cy:it.y-P,cw:mw+P*2,ch:it.h+P*2,
+          rawDets.push({cx:mx-P,cy:it.y-P,cw:mw+P*2,ch:it.h+P*2,
             x:(mx-P)/scale,y:(it.y-P)/scale,w:(mw+P*2)/scale,h:(it.h+P*2)/scale,
-            text:m[0],category:cat.id,catLabel:cat.label});
+            text:m[0],category:cat.id,catLabel:cat.label,priority:cat.priority});
         }
       }
     }
   }
 
-  // Concatenated line detection (for split patterns)
+  // === Pass 2: Concatenated line detection (for patterns split across items) ===
   const lg={};
   for(const it of items){const yk=Math.round(it.y/5)*5;if(!lg[yk])lg[yk]=[];lg[yk].push(it)}
   for(const[,li] of Object.entries(lg)){
@@ -486,19 +564,59 @@ function detectPII(pn){
       for(const pat of cat.patterns){
         const re=new RegExp(pat.source,pat.flags);let m;
         while((m=re.exec(ft))!==null){
-          if(dets.some(d=>d.text===m[0]&&Math.abs(d.cy-ly)<10))continue;
+          if(cat.validate && !cat.validate(m[0])) continue;
+
+          // Check if already found in pass 1 (same text near same Y)
+          const isDup=rawDets.some(d=>d.text===m[0]&&Math.abs(d.cy-ly)<10);
+          if(isDup) continue;
+
           const cr=m.index/Math.max(ft.length,1);
           const mr=m[0].length/Math.max(ft.length,1);
           const mx=lx+lw*cr,mw=Math.max(lw*mr,20);
           const P=2;
-          dets.push({cx:mx-P,cy:ly-P,cw:mw+P*2,ch:lh+P*2,
+          rawDets.push({cx:mx-P,cy:ly-P,cw:mw+P*2,ch:lh+P*2,
             x:(mx-P)/scale,y:(ly-P)/scale,w:(mw+P*2)/scale,h:(lh+P*2)/scale,
-            text:m[0],category:cat.id,catLabel:cat.label});
+            text:m[0],category:cat.id,catLabel:cat.label,priority:cat.priority});
         }
       }
     }
   }
-  return dets;
+
+  // === Deduplication: remove overlapping detections, keep higher priority ===
+  // Sort by priority (lower number = higher priority)
+  rawDets.sort((a,b)=>a.priority-b.priority);
+
+  const final=[];
+  const used=[];  // [{cx,cy,cw,ch}] - bounding boxes already claimed
+
+  for(const det of rawDets){
+    // Check if this detection spatially overlaps with any already accepted detection
+    const overlaps = used.some(u => {
+      const overlapX = det.cx < u.cx+u.cw && det.cx+det.cw > u.cx;
+      const overlapY = det.cy < u.cy+u.ch && det.cy+det.ch > u.cy;
+      if(!overlapX || !overlapY) return false;
+      // Calculate overlap area ratio
+      const ox1=Math.max(det.cx,u.cx), oy1=Math.max(det.cy,u.cy);
+      const ox2=Math.min(det.cx+det.cw,u.cx+u.cw), oy2=Math.min(det.cy+det.ch,u.cy+u.ch);
+      const overlapArea=(ox2-ox1)*(oy2-oy1);
+      const detArea=det.cw*det.ch;
+      // If >30% of this detection overlaps with existing, skip it
+      return overlapArea/detArea > 0.3;
+    });
+
+    if(!overlaps){
+      // Also check exact text duplicate at similar position
+      const textDup = final.some(f =>
+        f.text===det.text && Math.abs(f.cy-det.cy)<10 && Math.abs(f.cx-det.cx)<20
+      );
+      if(!textDup){
+        final.push(det);
+        used.push({cx:det.cx,cy:det.cy,cw:det.cw,ch:det.ch});
+      }
+    }
+  }
+
+  return final;
 }
 
 function toggleDetectPanel(){document.getElementById('detect-panel').classList.toggle('visible')}
