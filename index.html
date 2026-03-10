@@ -194,11 +194,11 @@
     .pp-warn{background:rgba(234,88,12,.08);border:1px solid rgba(234,88,12,.25);border-radius:6px;padding:8px 10px;font-size:11px;color:var(--orange);line-height:1.5;display:flex;gap:6px;align-items:flex-start}
     .pp-warn .warn-icon{font-size:14px;flex-shrink:0;margin-top:1px}
 
-    .pp-input-row{display:flex;gap:6px}
-    .pp-input{flex:1;padding:6px 10px;border:1.5px solid var(--border2);border-radius:5px;font-size:12px;font-family:var(--sans-kr);outline:none;transition:border-color .15s;background:var(--surface)}
+    .pp-input-row{display:flex;gap:6px;align-items:center;width:100%}
+    .pp-input{flex:1;min-width:0;padding:6px 10px;border:1.5px solid var(--border2);border-radius:5px;font-size:12px;font-family:var(--sans-kr);outline:none;transition:border-color .15s;background:var(--surface)}
     .pp-input:focus{border-color:var(--green)}
     .pp-input::placeholder{color:var(--ink-faint)}
-    .pp-add-btn{padding:6px 12px;border-radius:5px;border:1.5px solid var(--green);background:var(--green);color:#fff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:var(--sans-kr);transition:all .15s}
+    .pp-add-btn{flex-shrink:0;width:32px;height:32px;border-radius:5px;border:1.5px solid var(--green);background:var(--green);color:#fff;font-size:16px;font-weight:600;cursor:pointer;font-family:var(--sans-kr);transition:all .15s;display:flex;align-items:center;justify-content:center;padding:0}
     .pp-add-btn:hover{background:var(--green-dark)}
 
     .pp-kw-list{display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto;margin-top:6px}
@@ -210,7 +210,7 @@
     .pp-kw-del:hover{border-color:#ef4444;color:#ef4444;background:rgba(239,68,68,.07)}
     .pp-kw-empty{font-size:11px;color:var(--ink-faint);text-align:center;padding:12px 0}
 
-    .pp-cat-select{padding:5px 8px;border:1.5px solid var(--border2);border-radius:5px;font-size:11px;font-family:var(--sans-kr);background:var(--surface);color:var(--ink);outline:none;cursor:pointer;min-width:80px}
+    .pp-cat-select{flex-shrink:0;padding:6px 10px;border:1.5px solid var(--border2);border-radius:5px;font-size:12px;font-family:var(--sans-kr);background:var(--surface);color:var(--ink);outline:none;cursor:pointer}
 
     .pp-actions{display:flex;flex-direction:column;gap:6px;padding:14px 16px;border-top:1.5px solid var(--border);flex-shrink:0;background:var(--surface)}
     .pp-actions .pp-row{display:flex;gap:6px}
@@ -351,18 +351,20 @@
     <!-- Step 2: Keywords -->
     <div class="pp-section">
       <h4>🔑 키워드 등록 <span class="count" id="pp-kw-count">0</span></h4>
-      <div class="pp-input-row">
-        <input class="pp-input" id="pp-kw-input" placeholder="키워드 (예: 홍길동, 010-1234-5678)" onkeydown="if(event.key==='Enter')addPresetKeyword()">
-        <select class="pp-cat-select" id="pp-kw-cat">
-          <option value="name">성명</option>
-          <option value="ssn">주민번호</option>
-          <option value="phone">전화번호</option>
-          <option value="email">이메일</option>
-          <option value="address">주소</option>
-          <option value="account">계좌번호</option>
-          <option value="custom">기타</option>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <select class="pp-cat-select" id="pp-kw-cat" style="width:100%">
+          <option value="name">📌 성명</option>
+          <option value="ssn">📌 주민번호</option>
+          <option value="phone">📌 전화번호</option>
+          <option value="email">📌 이메일</option>
+          <option value="address">📌 주소</option>
+          <option value="account">📌 계좌번호</option>
+          <option value="custom">📌 기타</option>
         </select>
-        <button class="pp-add-btn" onclick="addPresetKeyword()">+</button>
+        <div class="pp-input-row">
+          <input class="pp-input" id="pp-kw-input" placeholder="마스킹할 키워드 입력" onkeydown="if(event.key==='Enter')addPresetKeyword()">
+          <button class="pp-add-btn" onclick="addPresetKeyword()">+</button>
+        </div>
       </div>
       <div class="pp-kw-list" id="pp-kw-list">
         <div class="pp-kw-empty">등록된 키워드가 없습니다</div>
@@ -803,20 +805,23 @@ function renderPII(){
     const tag=document.createElement('span');tag.className='pii-tag';tag.textContent=d.catLabel;
     el.appendChild(tag);el.addEventListener('click',()=>stampPII(i));piiLayer.appendChild(el);
   });
-  // Preset keyword detections
-  (presetDetections[currentPage]||[]).forEach((d,i)=>{
-    const color = PRESET_CAT_COLORS[d.category]||'#7C3AED';
-    const label = PRESET_CAT_LABELS[d.category]||'프리셋';
-    const el=document.createElement('div');
-    el.className='pii-highlight';
-    el.style.cssText=`left:${d.cx}px;top:${d.cy}px;width:${d.cw}px;height:${d.ch}px;border-color:${color};background:${color}15`;
-    if((redactions[currentPage]||[]).some(rd=>Math.abs(rd.x-d.x)<3&&Math.abs(rd.y-d.y)<3))el.classList.add('stamped');
-    const tag=document.createElement('span');tag.className='pii-tag';tag.style.background=color;
-    tag.textContent='📋'+label;
-    el.appendChild(tag);
-    el.addEventListener('click',()=>stampPresetItem(i));
-    piiLayer.appendChild(el);
-  });
+  // Preset keyword detections (only show when preset panel is open)
+  const ppOpen = document.getElementById('preset-panel').classList.contains('open');
+  if(ppOpen){
+    (presetDetections[currentPage]||[]).forEach((d,i)=>{
+      const color = PRESET_CAT_COLORS[d.category]||'#7C3AED';
+      const label = PRESET_CAT_LABELS[d.category]||'프리셋';
+      const el=document.createElement('div');
+      el.className='pii-highlight';
+      el.style.cssText=`left:${d.cx}px;top:${d.cy}px;width:${d.cw}px;height:${d.ch}px;border-color:${color};background:${color}15`;
+      if((redactions[currentPage]||[]).some(rd=>Math.abs(rd.x-d.x)<3&&Math.abs(rd.y-d.y)<3))el.classList.add('stamped');
+      const tag=document.createElement('span');tag.className='pii-tag';tag.style.background=color;
+      tag.textContent='📋'+label;
+      el.appendChild(tag);
+      el.addEventListener('click',()=>stampPresetItem(i));
+      piiLayer.appendChild(el);
+    });
+  }
 }
 
 function stampPresetItem(i){
@@ -995,7 +1000,19 @@ function updateAllBadges(){for(let i=1;i<=totalPages;i++)updateBadge(i)}
 
 // ═══ UNDO / CLEAR / NAV ═══
 function undoLast(){const r=redactions[currentPage];if(r?.length>0){r.pop();refresh();setStatus('되돌렸습니다',false)}}
-function clearAll(){redactions[currentPage]=[];selectedBoxId=null;refresh();setStatus('현재 페이지 초기화',false)}
+function clearAll(){
+  // Remove presetRedactionIds that belong to current page
+  const curIds = new Set((redactions[currentPage]||[]).map(r=>r.id));
+  for(const rid of curIds){ presetRedactionIds.delete(rid); }
+  // Clear all data for current page
+  redactions[currentPage]=[];
+  presetDetections[currentPage]=[];
+  piiDetections[currentPage]=[];
+  selectedBoxId=null;
+  refresh();
+  if(typeof updatePresetButtons==='function') updatePresetButtons();
+  setStatus('현재 페이지 초기화',false);
+}
 function updateUndoBtn(){
   const c=(redactions[currentPage]||[]).length;
   document.getElementById('btn-undo').disabled=c===0;
@@ -1072,6 +1089,8 @@ const PRESET_CAT_LABELS = {
 
 function togglePresetPanel(){
   document.getElementById('preset-panel').classList.toggle('open');
+  // Re-render to show/hide preset highlights
+  if(pdfDoc && currentMode==='stamp') renderPII();
 }
 
 function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
